@@ -14,11 +14,14 @@ let modulePromise = null;
  * Where to load the WASM binary from. By default jxl-oxide-wasm fetches the
  * `.wasm` file next to its module (`new URL(..., import.meta.url)`, which
  * bundlers rewrite); under Node, whose `fetch` cannot read `file:` URLs, pass
- * the file's bytes.
+ * the file's bytes. Call it before the first decode: jxl-oxide-wasm ignores a
+ * second initialisation.
  */
 export function setJxlWasmSource(source) {
+    if (modulePromise) {
+        throw new Error("setJxlWasmSource must be called before the first JPEG XL decode");
+    }
     wasmSource = source;
-    modulePromise = null;
 }
 function loadJxl() {
     if (!modulePromise) {
@@ -46,6 +49,7 @@ export async function decodeJxlGray16(stream) {
         if (!image.tryInit()) {
             throw new Error("truncated JPEG XL codestream");
         }
+        // encodeToPng consumes the RenderResult, which frees the frame
         png = image.render().encodeToPng();
     }
     finally {

@@ -224,3 +224,18 @@ describe("invalid input", () => {
     await expect(codec.decode(stream)).rejects.toThrow(/HS2P/);
   });
 });
+
+describe("setJxlWasmSource", () => {
+  it("refuses a source once the WASM module is loaded", async () => {
+    const testCase = manifest.cases.find((c) => c.name === "pyr_delta1")!;
+    const codec = await codecFor(
+      HCC_SENTINEL2_PYRAMID,
+      testCase.configuration,
+      meta("float64", [4])
+    );
+    await codec.decode(readBytes(testCase.stream));
+    expect(() => setJxlWasmSource(new Uint8Array())).toThrow(
+      /before the first JPEG XL decode/
+    );
+  });
+});

@@ -14,7 +14,8 @@ type TInitInput = Parameters<TJxlModule["default"]>[0];
  * Where to load the WASM binary from. By default jxl-oxide-wasm fetches the
  * `.wasm` file next to its module (`new URL(..., import.meta.url)`, which
  * bundlers rewrite); under Node, whose `fetch` cannot read `file:` URLs, pass
- * the file's bytes.
+ * the file's bytes. Call it before the first decode: jxl-oxide-wasm ignores a
+ * second initialisation.
  */
 export declare function setJxlWasmSource(source: TInitInput): void;
 /** Decode a lossless 16-bit grayscale JPEG XL codestream. */

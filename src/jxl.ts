@@ -7,8 +7,6 @@
  * {@link decodePngGray16} unpacks; for lossless integer images the samples
  * come back unchanged.
  */
-import wasmUrl from "jxl-oxide-wasm/module.wasm?url";
-
 import { decodePngGray16, type TGray16Image } from "./png16.ts";
 
 type TJxlModule = typeof import("jxl-oxide-wasm");
@@ -18,8 +16,10 @@ let wasmSource: TInitInput | undefined = undefined;
 let modulePromise: Promise<TJxlModule> | null = null;
 
 /**
- * Where to load the WASM binary from. The default is the URL Vite gives the
- * module's `.wasm` file; tests running under Node pass the file's bytes.
+ * Where to load the WASM binary from. By default jxl-oxide-wasm fetches the
+ * `.wasm` file next to its module (`new URL(..., import.meta.url)`, which
+ * bundlers rewrite); under Node, whose `fetch` cannot read `file:` URLs, pass
+ * the file's bytes.
  */
 export function setJxlWasmSource(source: TInitInput) {
   wasmSource = source;
@@ -30,8 +30,9 @@ function loadJxl(): Promise<TJxlModule> {
   if (!modulePromise) {
     modulePromise = (async () => {
       const mod = await import("jxl-oxide-wasm");
-      // eslint-disable-next-line camelcase
-      await mod.default({ module_or_path: wasmSource ?? wasmUrl });
+      await mod.default(
+        wasmSource === undefined ? undefined : { module_or_path: wasmSource }
+      );
       return mod;
     })();
     modulePromise.catch(() => {

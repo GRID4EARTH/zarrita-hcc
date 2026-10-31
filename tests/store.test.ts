@@ -12,10 +12,10 @@ import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 import * as zarr from "zarrita";
 
-import "@/lib/data/codecs.ts";
-import { setJxlWasmSource } from "@/lib/data/codecs/hcc/jxl.ts";
+import { registerHcc } from "../src/index.ts";
+import { setJxlWasmSource } from "../src/jxl.ts";
 
-const FIXTURES = fileURLToPath(new URL("hcc/__fixtures__/", import.meta.url));
+const FIXTURES = fileURLToPath(new URL("__fixtures__/", import.meta.url));
 const STORE_DIR = join(FIXTURES, "store_L12");
 
 /** A read-only zarrita store over the files of a directory. */
@@ -43,6 +43,7 @@ class DirectoryStore implements zarr.AsyncReadable {
 }
 
 beforeAll(() => {
+  registerHcc(zarr.registry);
   const require = createRequire(import.meta.url);
   const wasmPath = join(
     require.resolve("jxl-oxide-wasm/package.json"),

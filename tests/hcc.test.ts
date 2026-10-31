@@ -12,20 +12,18 @@ import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 import * as zarr from "zarrita";
 
-import "@/lib/data/codecs.ts";
 import {
   HCC_SENTINEL2,
   HCC_SENTINEL2_PYRAMID,
-} from "@/lib/data/codecs/hcc/index.ts";
-import {
-  decodeJxlGray16,
-  setJxlWasmSource,
-} from "@/lib/data/codecs/hcc/jxl.ts";
-import { streamInfo } from "@/lib/data/codecs/hcc/sentinel2Pyramid.ts";
+  registerHcc,
+} from "../src/index.ts";
+import { decodeJxlGray16, setJxlWasmSource } from "../src/jxl.ts";
+import { streamInfo } from "../src/sentinel2Pyramid.ts";
 
 const FIXTURES = fileURLToPath(new URL("__fixtures__/", import.meta.url));
 const TOLERANCE = 1e-6;
 const registry = zarr.registry;
+registerHcc(registry);
 
 interface TCase {
   name: string;
@@ -135,7 +133,7 @@ function compare(
 }
 
 beforeAll(() => {
-  // Node cannot fetch the Vite asset URL: hand the WASM bytes over
+  // Node's fetch cannot read the module's file: URL: hand the WASM bytes over
   const require = createRequire(import.meta.url);
   const wasmPath = join(
     require.resolve("jxl-oxide-wasm/package.json"),

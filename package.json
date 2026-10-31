@@ -1,0 +1,46 @@
+{
+  "name": "zarrita-hcc",
+  "version": "0.1.0",
+  "description": "zarrita codecs for the healpix-compress Sentinel-2 serializers (hcc-sentinel2-pyramid, hcc-sentinel2), decode-only",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GRID4EARTH/zarrita-hcc.git"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./codecs": {
+      "types": "./dist/codecs.d.ts",
+      "import": "./dist/codecs.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --check ."
+  },
+  "dependencies": {
+    "jxl-oxide-wasm": "^0.12.6"
+  },
+  "peerDependencies": {
+    "zarrita": "^0.7.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "prettier": "^3.9.8",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11",
+    "zarrita": "^0.7.5"
+  }
+}

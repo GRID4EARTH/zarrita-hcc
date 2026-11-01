@@ -1,6 +1,6 @@
 {
   "name": "zarrita-hcc",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "zarrita codecs for the healpix-compress Sentinel-2 serializers (hcc-sentinel2-pyramid, hcc-sentinel2), decode-only",
   "license": "Apache-2.0",
   "repository": {

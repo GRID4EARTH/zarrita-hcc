@@ -1,0 +1,44 @@
+name: Upstream healpix-compress
+
+# The decoders are a separate implementation of healpix-compress's formats, so
+# nothing tells us when an encoder change breaks them. Every week, regenerate
+# the fixtures with the latest release and with main, then decode them.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  decode:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        source:
+          - name: release
+            spec: "healpix-compress[jpegxl]"
+          - name: main
+            spec: "healpix-compress[jpegxl] @ git+https://github.com/GRID4EARTH/healpix-compress@main"
+    name: decode (${{ matrix.source.name }})
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - run: pip install "${{ matrix.source.spec }}"
+      - run: pip show healpix-compress
+      # without --store nothing is fetched: the real chunks already in the
+      # fixtures are decoded again by the reference implementation
+      - run: python scripts/make_hcc_fixtures.py tests/__fixtures__
+      - name: Fixtures changed by the regeneration
+        run: git status --short tests/__fixtures__
+      - run: npm ci
+      - run: npm test

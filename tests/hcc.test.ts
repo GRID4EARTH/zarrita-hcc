@@ -199,6 +199,58 @@ describe("decoded chunks", () => {
   );
 });
 
+describe("single-row chunks", () => {
+  const oneD = manifest.cases.filter((c) => c.shape.length === 1);
+
+  it.each(oneD.map((c) => [c.name, c] as const))(
+    "%s: the bare 1-D codestream reads the same through a (1, n) chunk",
+    async (_name, testCase) => {
+      const flat = await decodeWithRegistry(testCase);
+      const shape = [1, ...testCase.shape];
+      const codec = await codecFor(
+        testCase.codec,
+        testCase.configuration,
+        meta(testCase.data_type, shape)
+      );
+      const chunk = (await codec.decode(
+        readBytes(testCase.stream)
+      )) as unknown as zarr.Chunk<"float32" | "float64">;
+      expect(chunk.shape).toEqual(shape);
+      expect(Array.from(chunk.data)).toEqual(Array.from(flat.data));
+    }
+  );
+
+  it("still reads the framed single-row form", async () => {
+    const testCase = manifest.cases.find((c) => c.name === "ll_delta3")!;
+    const stream = readBytes(testCase.stream);
+    const framed = new Uint8Array(8 + stream.length);
+    new DataView(framed.buffer).setBigUint64(0, BigInt(stream.length), true);
+    framed.set(stream, 8);
+    const flat = await decodeWithRegistry(testCase);
+    const codec = await codecFor(
+      testCase.codec,
+      testCase.configuration,
+      meta(testCase.data_type, [1, ...testCase.shape])
+    );
+    const chunk = (await codec.decode(framed)) as unknown as zarr.Chunk<
+      "float32" | "float64"
+    >;
+    expect(Array.from(chunk.data)).toEqual(Array.from(flat.data));
+  });
+
+  it("stays strict for several rows without a header", async () => {
+    const testCase = manifest.cases.find((c) => c.name === "ll_delta4")!;
+    const codec = await codecFor(
+      testCase.codec,
+      testCase.configuration,
+      meta(testCase.data_type, [2, ...testCase.shape])
+    );
+    await expect(codec.decode(readBytes(testCase.stream))).rejects.toThrow(
+      /corrupt|truncated/
+    );
+  });
+});
+
 describe("invalid input", () => {
   it("rejects a chunk whose last axis is not a power of four", async () => {
     await expect(

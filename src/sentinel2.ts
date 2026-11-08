@@ -70,11 +70,27 @@ export function cStrides(shape: number[]): number[] {
   return stride;
 }
 
+/** One row in the framed form: a little-endian uint64 length, then exactly that many bytes. */
+function isFramedRow(data: Uint8Array): boolean {
+  if (data.length < 8) {
+    return false;
+  }
+  const view = new DataView(data.buffer, data.byteOffset, 8);
+  return 8 + Number(view.getBigUint64(0, true)) === data.length;
+}
+
 /**
  * Decode a chunk written row by row along its last axis
  * (`hcc.compression.sentinel2.decode_rows`): a 1-D chunk is one codestream;
  * a chunk with leading axes is the little-endian uint64 byte length of each
  * row's codestream, rows in C order, followed by the codestreams.
+ *
+ * A chunk with a single row (a leading axis of length 1, e.g. a pass or time
+ * axis of chunk size 1) is also read as the bare codestream of a 1-D chunk
+ * when the length header does not fit the data: the chunk objects of 1-D
+ * arrays can then be read through such an array as they are. A codestream
+ * cannot be taken for a framed row by accident (read as a length, its first
+ * 8 bytes are far larger than the chunk).
  */
 export async function decodeRows(
   data: Uint8Array,
@@ -92,6 +108,10 @@ export async function decodeRows(
     return;
   }
   const nRows = out.length / rowSize;
+  if (nRows === 1 && !isFramedRow(data)) {
+    await decodeRow(data, out, 0);
+    return;
+  }
   const header = 8 * nRows;
   if (data.length < header) {
     throw new Error(
